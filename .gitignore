@@ -89,3 +89,14 @@ postgres_data/
 *.tmp
 *.temp
 .cache/
+
+# Documentation (keep only README.md and cursorrules)
+*.md
+!README.md
+!cursorrules.mdc
+
+# Docker files (for local development only)
+Dockerfile
+docker-compose.yml
+.dockerignore
+run-local.sh
