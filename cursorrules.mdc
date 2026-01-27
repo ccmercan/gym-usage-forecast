@@ -1,0 +1,106 @@
+---
+alwaysApply: true
+---
+# .cursorrules — Raider Power Zone Forecasting (TTU)
+
+You are an expert senior software engineer pair-programming in Cursor.
+Build this repo as a production-quality, CV-worthy system: ingestion + time-series analytics + user preferences + daily email digest + UI.
+
+## Product Summary
+- Scrape TTU Raider Power Zone usage percentages every 30 minutes (read-only).
+- Store append-only snapshots in Postgres.
+- Provide a web UI:
+  - Settings page to configure user preferences (persisted)
+  - Dashboard page with best-time recommendations + heatmap
+- Send a daily email digest based on preferences.
+
+## Hard Requirements
+- Read-only scraping. Never attempt to modify TTU systems.
+- Be respectful: default scrape interval = 30 minutes, configurable.
+- Persist user preferences in DB. Must be user-editable in UI.
+- Recommendations must respect preferences:
+  - preferred start/end time (local)
+  - preferred days
+  - areas of interest
+  - crowd tolerance threshold
+  - timezone (default America/Chicago)
+- Notification channel is email (no SMS).
+- Must run locally end-to-end using docker compose.
+- Never commit secrets. Provide `.env.example`.
+
+## Recommended Implementation Choices
+- Python 3.12
+- Backend/UI: FastAPI + Jinja2 templates + HTMX (avoid heavy frontend)
+- DB: Postgres (Timescale optional later)
+- ORM: SQLAlchemy 2.x
+- Migrations: Alembic
+- Scraping: Playwright preferred; fallback requests+bs4 only if stable
+- Scheduling: implement jobs as stateless scripts/commands; do NOT use infinite loops
+  - Provide CLI entrypoints for: ingest, compute daily stats, send email digest
+- Email: provider via API key (e.g., Resend/SendGrid/Postmark) using env vars
+
+## Architecture Rules (Very Important)
+- Keep code modular:
+  - ingestion/ (fetch + parse)
+  - analytics/ (aggregation, recommend)
+  - notifications/ (email templates + send)
+  - app/ (FastAPI routes, templates, db models)
+- Jobs must be idempotent where possible:
+  - ingestion can append; avoid duplicates using a unique key (timestamp_utc + area) or tolerance window
+- Always treat timezones carefully:
+  - store timestamps in UTC
+  - convert to user timezone for recommendations and UI
+- Prefer explainable analytics:
+  - weekday + hour bucket averages
+  - rolling averages
+  - forecasting optional only after base works
+
+## Data Model Expectations
+- usage_snapshots:
+  - id
+  - timestamp_utc (datetime, UTC)
+  - location_name (string)
+  - usage_percentage (int 0-100)
+  - scraped_at_utc (datetime)
+  - parser_version (string)
+- user_preferences (single-user in v1 is OK):
+  - id (1)
+  - email
+  - timezone (default America/Chicago)
+  - preferred_start_time_local (HH:MM)
+  - preferred_end_time_local (HH:MM)
+  - preferred_days (e.g., array of ints 0-6)
+  - areas_of_interest (array of strings)
+  - crowd_tolerance_pct (int)
+  - digest_send_time_local (HH:MM)
+
+## UI Requirements
+- /settings: form to edit preferences (server-rendered, HTMX okay)
+- /dashboard:
+  - show “best 3 time slots today” within preferred window
+  - show heatmap data (day x hour) for selected area (last N days average)
+  - show latest scrape timestamp and latest values
+- Keep UI clean and readable; do not over-design.
+
+## Testing Requirements
+- Unit tests for:
+  - parser robustness (HTML variations)
+  - analytics filtering by preferences (time window, days, areas, tolerance)
+  - email rendering content (no times outside window)
+- Integration test (optional) that inserts sample snapshots and generates dashboard outputs.
+
+## Dev UX
+- Provide Makefile or scripts:
+  - make dev (run api)
+  - make ingest
+  - make digest
+- Add GitHub Actions CI: lint + tests.
+- Add README with:
+  - architecture diagram
+  - screenshots
+  - local run instructions (docker compose)
+
+## Cursor Work Style
+- Prefer small, cohesive commits.
+- Implement minimal correct version first, then refine.
+- If uncertain, choose simplest approach with TODOs rather than overengineering.

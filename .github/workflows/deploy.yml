@@ -1,0 +1,22 @@
+name: Deploy Application
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Deploy to Railway
+        run: |
+          echo "Deployment handled by Railway auto-deploy"
+          echo "Make sure Railway is connected to this GitHub repo"
+      
+      # Alternative: Deploy to other platforms
+      # - name: Deploy to Render
+      #   run: |
+      #     curl -X POST "https://api.render.com/deploy/srv/${{ secrets.RENDER_SERVICE_ID }}?key=${{ secrets.RENDER_API_KEY }}"
