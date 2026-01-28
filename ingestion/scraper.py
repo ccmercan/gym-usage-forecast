@@ -44,8 +44,9 @@ def scrape():
                 if len(texts) < 3:
                     continue
                 
-                name_text = (texts[0].inner_text() or "").strip()
-                pct_text = (texts[2].inner_text() or "").strip()
+                # For SVG <text> nodes, use text_content() instead of inner_text()
+                name_text = (texts[0].text_content() or "").strip()
+                pct_text = (texts[2].text_content() or "").strip()
                 
                 percent_match = re.search(r'(\d+)\s*%', pct_text)
                 if not percent_match:
