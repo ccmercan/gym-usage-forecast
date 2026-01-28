@@ -7,7 +7,6 @@ TTU recreation center usage monitoring and forecasting system.
 **Data Source**: [Live Facility Counts](https://www.depts.ttu.edu/recreation/facilities/hours.php)  
 *Note: Data is manually updated by TTU University Recreation. This system is read-only.*
 
-## 🚀 Try It Now
 
 Visit the live application at **[https://gym-usage-forecast-production.up.railway.app/](https://gym-usage-forecast-production.up.railway.app/)** to:
 - Configure your preferences (preferred workout times, areas of interest, crowd tolerance)
