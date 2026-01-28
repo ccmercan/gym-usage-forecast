@@ -24,70 +24,72 @@ def scrape():
         
         locations = []
         try:
-            # Wait for LIVE FACILITY COUNTS section
+            # Wait for LIVE FACILITY COUNTS section (best-effort)
             try:
-                page.wait_for_selector("h1:has-text('LIVE FACILITY COUNTS'), h1:has-text('LIVE'), text='LIVE FACILITY COUNTS'", timeout=5000)
+                page.wait_for_selector("div#charts h1:has-text('LIVE FACILITY COUNTS')", timeout=5000)
             except:
                 pass  # Continue even if selector doesn't match exactly
             
-            # Strategy 1: Look for structured data (tables, divs with facility info)
-            facility_elements = page.query_selector_all(
-                "table tr, [class*='facility'], [class*='zone'], [class*='area'], "
-                "[class*='count'], [class*='usage'], [id*='facility'], [id*='zone']"
-            )
-            
-            for elem in facility_elements:
-                text = elem.inner_text()
-                # Look for percentage patterns: "XX%" or "XX %"
-                percent_match = re.search(r'(\d+)\s*%', text)
-                if percent_match:
-                    # Extract facility name (text before percentage, clean it up)
-                    lines = text.split('\n')
-                    for line in lines:
-                        if '%' in line:
-                            # Try to extract name and percentage from this line
-                            parts = re.split(r'(\d+\s*%)', line)
-                            if len(parts) >= 2:
-                                name = parts[0].strip().rstrip(':-').strip()
-                                pct_str = parts[1].replace('%', '').strip()
-                                try:
-                                    pct = int(pct_str)
-                                    if 0 <= pct <= 100 and len(name) > 2:
-                                        # Avoid duplicates
-                                        if not any(loc["name"] == name for loc in locations):
-                                            locations.append({"name": name, "usage": pct})
-                                except ValueError:
-                                    pass
-            
-            # Strategy 2: If no structured data found, parse entire page text
-            if not locations:
-                body_text = page.query_selector("body").inner_text()
-                # Look for patterns like "Facility Name: XX%" or "Facility Name XX%"
-                # More specific pattern for facility counts
-                pattern = re.compile(
-                    r'([A-Z][A-Za-z\s&]+?)\s*[:]?\s*(\d+)\s*%|'
-                    r'(\d+)\s*%\s*([A-Z][A-Za-z\s&]+)',
-                    re.IGNORECASE | re.MULTILINE
-                )
-                matches = pattern.findall(body_text)
+            # Strategy 1 (primary): SVG charts inside #charts
+            # Structure example:
+            # <div id="charts">
+            #   <svg class="chart">
+            #     <text x="20" y="20">Raider Power Zone</text>
+            #     <text x="20" y="35">Last Updated: 4:34 PM</text>
+            #     <text x="200" y="45">83%</text>
+            #   ...
+            chart_svgs = page.query_selector_all("#charts svg.chart")
+            for svg in chart_svgs:
+                texts = svg.query_selector_all("text")
+                if len(texts) < 3:
+                    continue
                 
-                for match in matches:
-                    # Handle both pattern directions
-                    if match[0] and match[1]:  # "Name: XX%"
-                        name = match[0].strip()
-                        pct = int(match[1])
-                    elif match[2] and match[3]:  # "XX% Name"
-                        name = match[3].strip()
-                        pct = int(match[2])
-                    else:
-                        continue
+                name_text = (texts[0].inner_text() or "").strip()
+                pct_text = (texts[2].inner_text() or "").strip()
+                
+                percent_match = re.search(r'(\d+)\s*%', pct_text)
+                if not percent_match:
+                    continue
+                
+                try:
+                    pct = int(percent_match.group(1))
+                except ValueError:
+                    continue
+                
+                if 0 <= pct <= 100 and len(name_text) > 2:
+                    if not any(loc["name"] == name_text for loc in locations):
+                        locations.append({"name": name_text, "usage": pct})
+            
+            # Strategy 2 (fallback): parse entire page text if SVG parsing fails
+            if not locations:
+                body = page.query_selector("body")
+                if body:
+                    body_text = body.inner_text()
+                    # Look for patterns like "Facility Name: XX%" or "Facility Name XX%"
+                    pattern = re.compile(
+                        r'([A-Z][A-Za-z\s&]+?)\s*[:]?\s*(\d+)\s*%|'
+                        r'(\d+)\s*%\s*([A-Z][A-Za-z\s&]+)',
+                        re.IGNORECASE | re.MULTILINE
+                    )
+                    matches = pattern.findall(body_text)
                     
-                    # Filter out false positives
-                    if (0 <= pct <= 100 and 
-                        len(name) > 2 and 
-                        name.lower() not in ['the', 'and', 'for', 'university', 'recreation'] and
-                        not any(loc["name"] == name for loc in locations)):
-                        locations.append({"name": name, "usage": pct})
+                    for match in matches:
+                        # Handle both pattern directions
+                        if match[0] and match[1]:  # "Name: XX%"
+                            name = match[0].strip()
+                            pct = int(match[1])
+                        elif match[2] and match[3]:  # "XX% Name"
+                            name = match[3].strip()
+                            pct = int(match[2])
+                        else:
+                            continue
+                        
+                        # Filter out false positives
+                        if (0 <= pct <= 100 and 
+                            len(name) > 2 and 
+                            name.lower() not in ['the', 'and', 'for', 'university', 'recreation'] and
+                            not any(loc["name"] == name for loc in locations)):
+                            locations.append({"name": name, "usage": pct})
             
             # Debug: Print what we found
             if locations:
