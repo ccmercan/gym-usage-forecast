@@ -90,10 +90,10 @@ postgres_data/
 *.temp
 .cache/
 
-# Documentation (keep only README.md and cursorrules)
+# Documentation (keep only README.md, exclude cursorrules)
 *.md
 !README.md
-!cursorrules.mdc
+cursorrules.mdc
 
 # Docker files (for local development only)
 Dockerfile

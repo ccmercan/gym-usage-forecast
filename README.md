@@ -2,19 +2,18 @@
 
 TTU recreation center usage monitoring and forecasting system.
 
+**🌐 Live Application**: [https://gym-usage-forecast-production.up.railway.app/](https://gym-usage-forecast-production.up.railway.app/)
+
 **Data Source**: [Live Facility Counts](https://www.depts.ttu.edu/recreation/facilities/hours.php)  
 *Note: Data is manually updated by TTU University Recreation. This system is read-only.*
 
-## 🚀 Quick Deployment
+## 🚀 Try It Now
 
-See [DEPLOYMENT_PLAN.md](DEPLOYMENT_PLAN.md) for complete setup guide.
-
-**Quick steps:**
-1. Set up [Resend](https://resend.com) for emails
-2. Set up PostgreSQL (Railway/Neon)
-3. Add secrets to GitHub
-4. Deploy to Railway/Render
-5. Done! 🎉
+Visit the live application at **[https://gym-usage-forecast-production.up.railway.app/](https://gym-usage-forecast-production.up.railway.app/)** to:
+- Configure your preferences (preferred workout times, areas of interest, crowd tolerance)
+- View real-time recommendations for the best times to visit
+- See usage heatmaps showing average crowd levels by day and hour
+- Set up daily email digests with personalized recommendations
 
 ## Architecture
 
@@ -36,44 +35,11 @@ See [DEPLOYMENT_PLAN.md](DEPLOYMENT_PLAN.md) for complete setup guide.
 - `notifications/` - Email digest
 - `app/` - FastAPI routes, templates, models
 
-## Setup
+## 🛠️ For Developers
 
-1. Copy `.env.example` to `.env` and configure
-2. Run with Docker Compose:
-   ```bash
-   docker-compose up
-   ```
-3. Initialize database:
-   ```bash
-   alembic upgrade head
-   ```
+### Local Development Setup
 
-## Usage
-
-- `make dev` - Start API server
-- `make ingest` - Run scraper
-- `make digest` - Send email digest
-
-## Quick Start
-
-See [RUN.md](RUN.md) for detailed instructions.
-
-**Quick version:**
-```bash
-# 1. Copy env file
-cp .env.example .env
-
-# 2. Start with Docker
-docker-compose up -d
-
-# 3. Initialize database
-docker-compose exec app alembic upgrade head
-
-# 4. Access UI
-open http://localhost:8000
-```
-
-## Local Development
+If you want to run this project locally for development:
 
 ```bash
 pip install -r requirements.txt
