@@ -1,0 +1,27 @@
+name: Daily Digest
+
+on:
+  schedule:
+    - cron: '0 7 * * *'  # Daily at 7 AM UTC (adjust for your timezone)
+  workflow_dispatch:  # Manual trigger
+
+jobs:
+  daily-digest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+      
+      - name: Install Python dependencies
+        run: |
+          pip install -r requirements.txt
+      
+      - name: Send daily digest
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          EMAIL_API_KEY: ${{ secrets.EMAIL_API_KEY }}
+          EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
+        run: python -m cli digest
