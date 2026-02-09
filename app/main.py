@@ -204,7 +204,10 @@ async def save_and_show(request: Request, db: Session = Depends(get_db)):
         db.add(prefs)
     
     # Save settings (timezone is always America/Chicago for Texas)
-    prefs.email = form.get("email", "")
+    new_email = (form.get("email", "") or "").strip()
+    # Privacy: email field renders empty by default; don't erase stored email unless user provides one.
+    if new_email:
+        prefs.email = new_email
     prefs.timezone = "America/Chicago"  # Fixed to Texas time
     prefs.preferred_start_time_local = form.get("start_time", "06:00")
     prefs.preferred_end_time_local = form.get("end_time", "22:00")
