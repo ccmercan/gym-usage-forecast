@@ -1,13 +1,13 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="card">
-    <h1>📊 Dashboard</h1>
+    <h1> Dashboard</h1>
     {% if error %}
     <div class="error">{{ error }}</div>
     <p><a href="/settings">Configure your preferences</a> to see recommendations.</p>
     {% else %}
     
-    <h2>🎯 Best Times Today</h2>
+    <h2> Best Times Today</h2>
     {% if recommendations %}
         {% for hour, pct in recommendations %}
         <div class="recommendation">
@@ -18,7 +18,7 @@
         <p>No recommendations available. Make sure you have data and preferences configured.</p>
     {% endif %}
     
-    <h2>📈 Latest Facility Data</h2>
+    <h2>Latest Facility Data</h2>
     {% if latest %}
     <table>
         <thead>
@@ -46,7 +46,7 @@
     <p>No data available yet. Run <code>make ingest</code> to collect facility data.</p>
     {% endif %}
     
-    <h2>🔥 Usage Heatmap (Average Usage by Day & Hour)</h2>
+    <h2> Usage Heatmap (Average Usage by Day & Hour)</h2>
     {% if heatmap %}
     <p style="color: #666; margin-bottom: 1rem;">Day of week × Hour of day (Green: Low, Orange: Medium, Red: High)</p>
     <div style="overflow-x: auto;">
