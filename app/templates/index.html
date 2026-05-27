@@ -1,5 +1,41 @@
 {% extends "base.html" %}
 {% block content %}
+<div class="card" id="ai-chat-card">
+    <h1>Ask AI Assistant</h1>
+    <p style="color:#666; margin-bottom:1rem;">
+        Ask anything about gym usage, crowd levels, or best workout times.
+        Powered by Gemini via Vertex AI — it queries scraped real database to answer.
+    </p>
+
+    <div id="chat-history" style="
+        min-height: 60px;
+        max-height: 360px;
+        overflow-y: auto;
+        margin-bottom: 1rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    "></div>
+
+    <div style="display:flex; gap:0.5rem;">
+        <input
+            id="chat-input"
+            type="text"
+            placeholder="e.g. When is the gym least busy on Mondays?"
+            style="flex:1; padding:0.6rem 0.8rem; border:1px solid #ddd; border-radius:6px; font-size:0.95rem;"
+            onkeydown="if(event.key==='Enter') sendQuestion()"
+        >
+        <button
+            onclick="sendQuestion()"
+            style="padding:0.6rem 1.2rem; background:#c41e3a; color:#fff; border:none; border-radius:6px; cursor:pointer; font-size:0.95rem;"
+        >Ask</button>
+    </div>
+
+    <div style="margin-top:0.75rem;">
+        <small style="color:#999;">Try: "Is the gym busy right now?" &nbsp;·&nbsp; "Best time for a 90-min workout?" &nbsp;·&nbsp; "How crowded is it on Friday evenings?"</small>
+    </div>
+</div>
+
 <div class="card">
     <h1> Raider Power Zone Forecasting</h1>
     
@@ -107,42 +143,6 @@
     {% else %}
     <p>No heatmap data available. Make sure you have data and preferences configured.</p>
     {% endif %}
-</div>
-
-<div class="card" id="ai-chat-card">
-    <h1>Ask AI Assistant</h1>
-    <p style="color:#666; margin-bottom:1rem;">
-        Ask anything about gym usage, crowd levels, or best workout times.
-        Powered by Gemini via Vertex AI — it queries your real database to answer.
-    </p>
-
-    <div id="chat-history" style="
-        min-height: 60px;
-        max-height: 360px;
-        overflow-y: auto;
-        margin-bottom: 1rem;
-        display: flex;
-        flex-direction: column;
-        gap: 0.75rem;
-    "></div>
-
-    <div style="display:flex; gap:0.5rem;">
-        <input
-            id="chat-input"
-            type="text"
-            placeholder="e.g. When is the gym least busy on Mondays?"
-            style="flex:1; padding:0.6rem 0.8rem; border:1px solid #ddd; border-radius:6px; font-size:0.95rem;"
-            onkeydown="if(event.key==='Enter') sendQuestion()"
-        >
-        <button
-            onclick="sendQuestion()"
-            style="padding:0.6rem 1.2rem; background:#c41e3a; color:#fff; border:none; border-radius:6px; cursor:pointer; font-size:0.95rem;"
-        >Ask</button>
-    </div>
-
-    <div style="margin-top:0.75rem;">
-        <small style="color:#999;">Try: "Is the gym busy right now?" &nbsp;·&nbsp; "Best time for a 90-min workout?" &nbsp;·&nbsp; "How crowded is it on Friday evenings?"</small>
-    </div>
 </div>
 
 <script>
