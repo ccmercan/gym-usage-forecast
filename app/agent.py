@@ -18,12 +18,33 @@ Why this matters for the JD:
 import os
 import json
 import uuid
+import tempfile
 from sqlalchemy.orm import Session
 
 from app.tools import get_current_usage, get_best_times, query_gym_data
 
 GCP_PROJECT = os.getenv("GCP_PROJECT_ID", "")
 GCP_REGION = os.getenv("GCP_REGION", "us-central1")
+
+
+def _setup_gcp_credentials():
+    """
+    Support two credential modes:
+      1. Local dev: GOOGLE_APPLICATION_CREDENTIALS points to a JSON key file
+      2. Production (Railway): GOOGLE_APPLICATION_CREDENTIALS_JSON holds the key contents
+         as a string — we write it to a temp file and set the env var to that path.
+    """
+    json_contents = os.getenv("GOOGLE_APPLICATION_CREDENTIALS_JSON", "")
+    if json_contents and not os.getenv("GOOGLE_APPLICATION_CREDENTIALS"):
+        tmp = tempfile.NamedTemporaryFile(
+            mode="w", suffix=".json", delete=False
+        )
+        tmp.write(json_contents)
+        tmp.flush()
+        os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = tmp.name
+
+
+_setup_gcp_credentials()
 
 SYSTEM_PROMPT = (
     "You are an AI assistant for the Raider Power Zone gym forecasting system "
