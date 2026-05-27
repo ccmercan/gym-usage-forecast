@@ -3,6 +3,7 @@ from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import inspect, text
@@ -246,3 +247,20 @@ async def save_and_show(request: Request, db: Session = Depends(get_db)):
         "available_facilities": available_facilities,
         "saved": True
     })
+
+
+# ── AI Agent endpoint ──────────────────────────────────────────────────────────
+# Why a separate endpoint?
+# The /ask route is a JSON API so the chat widget can call it via fetch()
+# without a page reload. It feeds the question into the Gemini agentic loop
+# which queries PostgreSQL via tool calls and returns a natural language answer.
+
+class AskRequest(BaseModel):
+    question: str
+
+
+@app.post("/ask")
+async def ask_agent(body: AskRequest, db: Session = Depends(get_db)):
+    from app.agent import ask
+    answer = ask(body.question, db)
+    return {"answer": answer}

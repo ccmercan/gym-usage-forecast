@@ -7,7 +7,10 @@ class Settings(BaseSettings):
     email_api_key: str = ""
     email_from: str = ""
     scrape_interval_minutes: int = 30
-    
+    gcp_project_id: str = ""
+    gcp_region: str = "us-central1"
+    google_application_credentials: str = ""
+
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"

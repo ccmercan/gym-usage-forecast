@@ -108,4 +108,100 @@
     <p>No heatmap data available. Make sure you have data and preferences configured.</p>
     {% endif %}
 </div>
+
+<div class="card" id="ai-chat-card">
+    <h1>Ask AI Assistant</h1>
+    <p style="color:#666; margin-bottom:1rem;">
+        Ask anything about gym usage, crowd levels, or best workout times.
+        Powered by Gemini via Vertex AI — it queries your real database to answer.
+    </p>
+
+    <div id="chat-history" style="
+        min-height: 60px;
+        max-height: 360px;
+        overflow-y: auto;
+        margin-bottom: 1rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    "></div>
+
+    <div style="display:flex; gap:0.5rem;">
+        <input
+            id="chat-input"
+            type="text"
+            placeholder="e.g. When is the gym least busy on Mondays?"
+            style="flex:1; padding:0.6rem 0.8rem; border:1px solid #ddd; border-radius:6px; font-size:0.95rem;"
+            onkeydown="if(event.key==='Enter') sendQuestion()"
+        >
+        <button
+            onclick="sendQuestion()"
+            style="padding:0.6rem 1.2rem; background:#c41e3a; color:#fff; border:none; border-radius:6px; cursor:pointer; font-size:0.95rem;"
+        >Ask</button>
+    </div>
+
+    <div style="margin-top:0.75rem;">
+        <small style="color:#999;">Try: "Is the gym busy right now?" &nbsp;·&nbsp; "Best time for a 90-min workout?" &nbsp;·&nbsp; "How crowded is it on Friday evenings?"</small>
+    </div>
+</div>
+
+<script>
+function sendQuestion() {
+    const input = document.getElementById('chat-input');
+    const history = document.getElementById('chat-history');
+    const question = input.value.trim();
+    if (!question) return;
+
+    // Show the user's question
+    history.innerHTML += `
+        <div style="text-align:right;">
+            <span style="background:#c41e3a; color:#fff; padding:0.4rem 0.8rem; border-radius:12px 12px 2px 12px; display:inline-block; max-width:80%; font-size:0.9rem;">
+                ${escapeHtml(question)}
+            </span>
+        </div>`;
+
+    // Show loading indicator
+    const loadingId = 'loading-' + Date.now();
+    history.innerHTML += `
+        <div id="${loadingId}" style="text-align:left;">
+            <span style="background:#f0f0f0; color:#666; padding:0.4rem 0.8rem; border-radius:12px 12px 12px 2px; display:inline-block; font-size:0.9rem;">
+                Thinking...
+            </span>
+        </div>`;
+    history.scrollTop = history.scrollHeight;
+    input.value = '';
+
+    // Call the /ask endpoint
+    fetch('/ask', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question: question })
+    })
+    .then(res => res.json())
+    .then(data => {
+        document.getElementById(loadingId).remove();
+        history.innerHTML += `
+            <div style="text-align:left;">
+                <span style="background:#f0f0f0; color:#333; padding:0.4rem 0.8rem; border-radius:12px 12px 12px 2px; display:inline-block; max-width:85%; font-size:0.9rem; white-space:pre-wrap;">
+                    ${escapeHtml(data.answer || 'No response received.')}
+                </span>
+            </div>`;
+        history.scrollTop = history.scrollHeight;
+    })
+    .catch(err => {
+        document.getElementById(loadingId).remove();
+        history.innerHTML += `
+            <div style="text-align:left;">
+                <span style="background:#fff0f0; color:#c41e3a; padding:0.4rem 0.8rem; border-radius:12px; display:inline-block; font-size:0.9rem;">
+                    Error: ${escapeHtml(err.message)}
+                </span>
+            </div>`;
+        history.scrollTop = history.scrollHeight;
+    });
+}
+
+function escapeHtml(text) {
+    return text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+</script>
 {% endblock %}
