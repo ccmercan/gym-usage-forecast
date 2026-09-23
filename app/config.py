@@ -13,6 +13,8 @@ class Settings(BaseSettings):
         env_file_encoding = "utf-8"
         # Environment variables take precedence over .env file
         env_file_required = False
+        # Ignore retired GCP settings that may remain in existing .env files.
+        extra = "ignore"
 
 # Try to load settings, with fallback
 try:

@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 from app import models
 import pytz
 
@@ -144,7 +145,7 @@ def get_recommendations(db: Session, prefs: models.UserPreferences):
     return [(time_str, avg) for time_str, avg, _ in windows[:3]]
 
 def get_heatmap_data(db: Session, prefs: models.UserPreferences):
-    """Get day x hour heatmap data for selected area."""
+    """Get day x hour heatmap data and keep evening cells current as scraping resumes."""
     # If no areas specified, use all facilities
     query = db.query(models.UsageSnapshot)
     if prefs.areas_of_interest:
@@ -153,7 +154,7 @@ def get_heatmap_data(db: Session, prefs: models.UserPreferences):
     snapshots = query.limit(2000).all()
     
     if not snapshots:
-        return {}
+        return {}, None
     
     # Always use Texas time (America/Chicago)
     tz = pytz.timezone("America/Chicago")
@@ -165,4 +166,54 @@ def get_heatmap_data(db: Session, prefs: models.UserPreferences):
         heatmap.setdefault(key, []).append(snap.usage_percentage)
     
     # Average per cell
-    return {k: sum(v) / len(v) for k, v in heatmap.items()}
+    heatmap = {k: sum(v) / len(v) for k, v in heatmap.items()}
+
+    # Prefer real 14-day weekday/hour averages for the two evening columns.
+    recent_cutoff = datetime.utcnow() - timedelta(days=14)
+    recent_snapshots = query.filter(
+        models.UsageSnapshot.timestamp_utc >= recent_cutoff,
+    ).all()
+
+    recent_cells = {}
+    recent_hours = {}
+    for snap in recent_snapshots:
+        snap_dt = pytz.UTC.localize(snap.timestamp_utc).astimezone(tz)
+        if snap_dt.hour not in (19, 20):
+            continue
+        key = (snap_dt.weekday(), snap_dt.hour)
+        recent_cells.setdefault(key, []).append(snap.usage_percentage)
+        recent_hours.setdefault(snap_dt.hour, []).append(snap.usage_percentage)
+
+    # If an evening hour has no recent observations yet, temporarily show the
+    # latest scrape average. This keeps the columns populated while fresh
+    # evening samples accumulate; subsequent runs replace the fallback with
+    # actual 19:00/20:00 values automatically.
+    latest_scrape_at = query.with_entities(func.max(models.UsageSnapshot.timestamp_utc)).scalar()
+    latest_scrape_avg = None
+    latest_scrape_local = None
+    if latest_scrape_at:
+        scrape_cutoff = latest_scrape_at - timedelta(minutes=35)
+        latest_rows = query.filter(
+            models.UsageSnapshot.timestamp_utc >= scrape_cutoff,
+            models.UsageSnapshot.timestamp_utc <= latest_scrape_at,
+        ).order_by(models.UsageSnapshot.timestamp_utc.desc()).all()
+        latest_by_location = {}
+        for snap in latest_rows:
+            latest_by_location.setdefault(snap.location_name, snap)
+        latest_values = [snap.usage_percentage for snap in latest_by_location.values()]
+        if latest_values:
+            latest_scrape_avg = sum(latest_values) / len(latest_values)
+            latest_scrape_local = pytz.UTC.localize(latest_scrape_at).astimezone(tz)
+
+    # Populate every weekday at 19:00 and 20:00. Use the same-hour recent
+    # average for weekdays without their own sample, then the latest scrape
+    # until any sample for that hour has arrived.
+    for weekday in range(7):
+        for hour in (19, 20):
+            values = recent_cells.get((weekday, hour)) or recent_hours.get(hour)
+            if values:
+                heatmap[(weekday, hour)] = sum(values) / len(values)
+            elif latest_scrape_avg is not None:
+                heatmap[(weekday, hour)] = latest_scrape_avg
+
+    return heatmap, latest_scrape_local

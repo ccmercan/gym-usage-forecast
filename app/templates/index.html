@@ -78,6 +78,9 @@
     <h2> Usage Heatmap (Average Usage by Day & Hour)</h2>
     {% if heatmap %}
     <p style="color: #666; margin-bottom: 1rem;">Day of week × Hour of day (6am-12am) - Green: Low, Orange: Medium, Red: High</p>
+    {% if heatmap_fallback_time %}
+    <small style="color: #666;">19:00 and 20:00 use weekday averages from the last 14 days when available. Empty weekday cells use that hour’s average; if the hour has no recent samples yet, they temporarily show the latest scrape from {{ heatmap_fallback_time.strftime('%b %d at %I:%M %p') }}.</small>
+    {% endif %}
     <div style="overflow-x: auto;">
         <table style="font-size: 0.85rem; border-collapse: collapse; width: 100%;">
             <thead>

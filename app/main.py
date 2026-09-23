@@ -177,19 +177,21 @@ async def root(request: Request, db: Session = Depends(get_db)):
     
     try:
         recommendations = get_recommendations(db, prefs)
-        heatmap = get_heatmap_data(db, prefs)
+        heatmap, heatmap_fallback_time = get_heatmap_data(db, prefs)
     except Exception as e:
         print(f"Error generating dashboard data: {e}")
         import traceback
         traceback.print_exc()
         recommendations = []
         heatmap = {}
+        heatmap_fallback_time = None
     
     return templates.TemplateResponse("index.html", {
         "request": request,
         "prefs": prefs,
         "recommendations": recommendations,
         "heatmap": heatmap,
+        "heatmap_fallback_time": heatmap_fallback_time,
         "available_facilities": available_facilities
     })
 
@@ -232,17 +234,19 @@ async def save_and_show(request: Request, db: Session = Depends(get_db)):
     
     try:
         recommendations = get_recommendations(db, prefs)
-        heatmap = get_heatmap_data(db, prefs)
+        heatmap, heatmap_fallback_time = get_heatmap_data(db, prefs)
     except Exception as e:
         print(f"Error generating dashboard data: {e}")
         recommendations = []
         heatmap = {}
+        heatmap_fallback_time = None
     
     return templates.TemplateResponse("index.html", {
         "request": request,
         "prefs": prefs,
         "recommendations": recommendations,
         "heatmap": heatmap,
+        "heatmap_fallback_time": heatmap_fallback_time,
         "available_facilities": available_facilities,
         "saved": True
     })
