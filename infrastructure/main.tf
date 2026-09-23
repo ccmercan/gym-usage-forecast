@@ -2,11 +2,11 @@
 # Raider Power Zone — GCP Infrastructure
 #
 # What this provisions:
-#   1. Enables required GCP APIs (Cloud Run, Cloud SQL, Vertex AI, Secret Manager)
+#   1. Enables required GCP APIs (Cloud Run, Cloud SQL, Secret Manager)
 #   2. Cloud SQL (Postgres 15) — production database
 #   3. Cloud Run service — hosts the FastAPI app
 #   4. Secret Manager — stores DATABASE_URL and API keys securely
-#   5. IAM — grants Cloud Run access to secrets and Vertex AI
+#   5. IAM — grants Cloud Run access to secrets
 #
 # Why Terraform?
 #   Infrastructure as code: reproducible, version-controlled, reviewable.
@@ -75,11 +75,6 @@ resource "google_project_service" "sqladmin" {
   disable_on_destroy = false
 }
 
-resource "google_project_service" "aiplatform" {
-  service            = "aiplatform.googleapis.com"
-  disable_on_destroy = false
-}
-
 resource "google_project_service" "secretmanager" {
   service            = "secretmanager.googleapis.com"
   disable_on_destroy = false
@@ -91,13 +86,6 @@ resource "google_project_service" "secretmanager" {
 resource "google_service_account" "recapp" {
   account_id   = "recapp-runner"
   display_name = "RecApp Cloud Run Service Account"
-}
-
-# Allow the service account to call Vertex AI (Gemini)
-resource "google_project_iam_member" "vertex_user" {
-  project = var.project_id
-  role    = "roles/aiplatform.user"
-  member  = "serviceAccount:${google_service_account.recapp.email}"
 }
 
 # Allow the service account to read secrets
@@ -185,16 +173,6 @@ resource "google_cloud_run_v2_service" "recapp" {
         }
       }
 
-      env {
-        name  = "GCP_PROJECT_ID"
-        value = var.project_id
-      }
-
-      env {
-        name  = "GCP_REGION"
-        value = var.region
-      }
-
       resources {
         limits = {
           cpu    = "1"
@@ -212,10 +190,7 @@ resource "google_cloud_run_v2_service" "recapp" {
     }
   }
 
-  depends_on = [
-    google_project_service.run,
-    google_project_service.aiplatform,
-  ]
+  depends_on = [google_project_service.run]
 }
 
 # Make the Cloud Run service publicly accessible
