@@ -1,6 +1,7 @@
 from fastapi import FastAPI, Request, Depends
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
+from fastapi.staticfiles import StaticFiles
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
@@ -121,6 +122,7 @@ def run_migrations_if_needed():
 _migrations_complete = run_migrations_if_needed()
 
 app = FastAPI()
+app.mount("/static", StaticFiles(directory="app/static"), name="static")
 templates = Jinja2Templates(directory="app/templates")
 
 @app.on_event("startup")
@@ -202,19 +204,17 @@ async def save_and_show(request: Request, db: Session = Depends(get_db)):
     form = await request.form()
     prefs = db.query(models.UserPreferences).first()
     if not prefs:
-        prefs = models.UserPreferences(id=1, timezone="America/Chicago")
+        # The database keeps legacy notification columns, but the dashboard no
+        # longer collects an email address or digest preference.
+        prefs = models.UserPreferences(id=1, email="", timezone="America/Chicago")
         db.add(prefs)
     
-    # Save settings (timezone is always America/Chicago for Texas)
-    new_email = (form.get("email", "") or "").strip()
-    # Privacy: email field renders empty by default; don't erase stored email unless user provides one.
-    if new_email:
-        prefs.email = new_email
+    # Save dashboard preferences (timezone is always America/Chicago for Texas).
     prefs.timezone = "America/Chicago"  # Fixed to Texas time
     prefs.preferred_start_time_local = form.get("start_time", "06:00")
     prefs.preferred_end_time_local = form.get("end_time", "22:00")
-    prefs.digest_send_time_local = form.get("digest_time", "07:00")
-    prefs.workout_duration_minutes = int(form.get("workout_duration", 60))
+    if form.get("workout_duration"):
+        prefs.workout_duration_minutes = int(form["workout_duration"])
     
     # Parse areas of interest from checkboxes
     areas = form.getlist("areas")  # Get all checked checkboxes

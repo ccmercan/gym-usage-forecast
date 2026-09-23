@@ -1,115 +1,152 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="card">
-    <h1> Raider Power Zone Forecasting</h1>
-    
-    <form method="post" action="/" id="settings-form">
-        <h2>⚙️ Settings</h2>
-        {% if saved %}
-        <div class="success">✓ Settings saved successfully!</div>
-        {% endif %}
-        
-        <div class="form-row">
-            <div class="form-group">
-                <label>Email Address</label>
-                <input type="email" name="email" value="" placeholder="your.email@ttu.edu" autocomplete="email">
-            </div>
-            
-            <div class="form-group">
-                <label>Digest Send Time (HH:MM)</label>
-                <input type="time" name="digest_time" value="{{ prefs.digest_send_time_local if prefs else '07:00' }}">
-            </div>
+<header class="hero">
+    <div class="hero-copy brand-lockup">
+        <img class="ttu-mark" src="/static/images/ttu-double-t.svg" alt="Texas Tech Double T logo">
+        <div class="hero-copy-text">
+            <span class="eyebrow">TEXAS TECH RECREATION</span>
+            <h1>Raider Power Zone</h1>
+            <p>Gym Usage Forecast</p>
         </div>
-        
-        <div class="form-row">
-            <div class="form-group">
-                <label>Preferred Start Time (HH:MM)</label>
-                <input type="time" name="start_time" value="{{ prefs.preferred_start_time_local if prefs else '06:00' }}" required>
-            </div>
-            
-            <div class="form-group">
-                <label>Preferred End Time (HH:MM)</label>
-                <input type="time" name="end_time" value="{{ prefs.preferred_end_time_local if prefs else '22:00' }}" required>
-            </div>
-        </div>
-        
-        <div class="form-group">
-            <label>Workout Duration (minutes)</label>
-            <input type="number" name="workout_duration" min="15" max="240" step="15" value="{{ prefs.workout_duration_minutes if prefs else 60 }}" required>
-            <small style="color: #666;">How long do you typically work out? (15-240 minutes)</small>
-        </div>
-        
-        <div class="form-group">
-            <label>Areas of Interest</label>
-            <div class="checkbox-group">
-                {% for facility in available_facilities %}
-                <label class="checkbox-label">
-                    <input type="checkbox" name="areas" value="{{ facility }}" 
-                           {% if prefs and prefs.areas_of_interest and facility in prefs.areas_of_interest %}checked{% endif %}>
-                    <span>{{ facility }}</span>
-                </label>
-                {% endfor %}
-            </div>
-            <small style="color: #666;">Select facilities to track. Leave all unchecked to track all facilities.</small>
-        </div>
-        
-        <button type="submit">💾 Save Settings</button>
-    </form>
-</div>
-
-<div class="card">
-    <h1> Dashboard</h1>
-    
-    <h2> Best Times Today</h2>
-    {% if recommendations %}
-        <p style="color: #666; margin-bottom: 1rem;">
-            Based on last 2 weeks of data for {{ prefs.areas_of_interest|length if prefs.areas_of_interest else 'all' }} selected facility{{ 'ies' if prefs.areas_of_interest|length != 1 else '' }}.
-            Recommended {{ prefs.workout_duration_minutes if prefs else 60 }}-minute workout windows:
-        </p>
-        {% for time_range, pct in recommendations %}
-        <div class="recommendation">
-            <strong>{{ time_range }}</strong> - {{ "%.1f"|format(pct) }}% average usage
-        </div>
-        {% endfor %}
-    {% else %}
-        <p>No recommendations available. Make sure you have data and preferences configured.</p>
-    {% endif %}
-    
-    <h2> Usage Heatmap (Average Usage by Day & Hour)</h2>
-    {% if heatmap %}
-    <p style="color: #666; margin-bottom: 1rem;">Day of week × Hour of day (6am-12am) - Green: Low, Orange: Medium, Red: High</p>
-    {% if heatmap_fallback_time %}
-    <small style="color: #666;">19:00 and 20:00 use weekday averages from the last 14 days when available. Empty weekdays use that hour’s average; if an hour has no recent samples, only the latest scrape’s weekday shows a temporary value from {{ heatmap_fallback_time.strftime('%b %d at %I:%M %p') }}.</small>
-    {% endif %}
-    <div style="overflow-x: auto;">
-        <table style="font-size: 0.85rem; border-collapse: collapse; width: 100%;">
-            <thead>
-                <tr>
-                    <th style="padding: 0.5rem; background: #f8f9fa;">Day/Hour</th>
-                    {% for h in range(6, 24) %}
-                    <th style="padding: 0.5rem; background: #f8f9fa; font-size: 0.75rem;">{{ h }}:00</th>
-                    {% endfor %}
-                </tr>
-            </thead>
-            <tbody>
-                {% set days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] %}
-                {% for day in range(7) %}
-                <tr>
-                    <th style="padding: 0.5rem; background: #f8f9fa; text-align: left;">{{ days[day] }}</th>
-                    {% for h in range(6, 24) %}
-                    {% set val = heatmap.get((day, h)) %}
-                    <td style="padding: 0.5rem; text-align: center; border: 1px solid #ddd; background: {% if val %}{% if val < 30 %}rgba(76, 175, 80, 0.4){% elif val < 70 %}rgba(255, 152, 0, 0.4){% else %}rgba(244, 67, 54, 0.4){% endif %}{% else %}#f5f5f5{% endif %}; min-width: 40px;">
-                        {% if val %}{{ "%.0f"|format(val) }}%{% else %}-{% endif %}
-                    </td>
-                    {% endfor %}
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
     </div>
-    {% else %}
-    <p>No heatmap data available. Make sure you have data and preferences configured.</p>
-    {% endif %}
-</div>
+    <div class="hero-art">
+        <img class="hero-photo" src="/static/images/gym-hero.png" alt="Weight room with strength equipment">
+        <div class="hero-photo-shade" aria-hidden="true"></div>
+        <div class="hero-art-caption" aria-label="People, purpose, progress">
+            <span>PEOPLE</span>
+            <span>PURPOSE</span>
+            <span>PROGRESS</span>
+            <i aria-hidden="true"></i>
+        </div>
+    </div>
+</header>
 
+<section class="panel preferences-panel" aria-labelledby="preferences-title">
+    <div class="panel-heading">
+        <div>
+            <h2 id="preferences-title">Set your preferences</h2>
+            <p>Tell us when you plan to work out and which areas you’re interested in.</p>
+        </div>
+        {% if saved %}<div class="success" role="status">Preferences saved</div>{% endif %}
+    </div>
+
+    <form method="post" action="/" id="settings-form">
+        <div class="preferences-layout">
+            <div class="time-preferences">
+                <div class="form-group">
+                    <label for="start-time">Preferred start time</label>
+                    <div class="time-input-wrap">
+                        <span class="time-icon" aria-hidden="true">◷</span>
+                        <input id="start-time" type="time" name="start_time" value="{{ prefs.preferred_start_time_local if prefs else '06:00' }}" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="end-time">Preferred end time</label>
+                    <div class="time-input-wrap">
+                        <span class="time-icon" aria-hidden="true">◷</span>
+                        <input id="end-time" type="time" name="end_time" value="{{ prefs.preferred_end_time_local if prefs else '22:00' }}" required>
+                    </div>
+                </div>
+            </div>
+
+            <fieldset class="interest-preferences">
+                <legend>Areas of interest</legend>
+                <div class="facility-toggles">
+                    {% for facility in available_facilities %}
+                    <label class="facility-toggle">
+                        <input type="checkbox" name="areas" value="{{ facility }}"
+                               {% if prefs and prefs.areas_of_interest and facility in prefs.areas_of_interest %}checked{% endif %}>
+                        <span class="facility-toggle-name">{{ facility }}</span>
+                        <span class="toggle-track" aria-hidden="true"><span></span></span>
+                    </label>
+                    {% endfor %}
+                </div>
+                <small class="field-hint">Turn on each area you want included in your forecast. Leave all off to include every area.</small>
+            </fieldset>
+
+            <div class="save-preferences">
+                <button type="submit">Save preferences</button>
+            </div>
+        </div>
+    </form>
+</section>
+
+<main class="panel dashboard-panel">
+    <div class="dashboard-heading">
+        <div>
+            <span class="eyebrow">YOUR REC CENTER AT A GLANCE</span>
+            <h2>Usage dashboard</h2>
+        </div>
+    </div>
+
+    <section class="recommendations" aria-labelledby="best-times-title">
+        <div class="section-heading">
+            <div>
+                <h3 id="best-times-title">Best times today</h3>
+                <p>Quieter workout windows based on your selected areas.</p>
+            </div>
+        </div>
+        {% if recommendations %}
+        <div class="recommendation-list">
+            {% for time_range, pct in recommendations %}
+            <div class="recommendation">
+                <span class="recommendation-time">{{ time_range }}</span>
+                <span class="recommendation-usage">{{ "%.1f"|format(pct) }}% average usage</span>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="empty-state">No recommendations yet. Check back after more usage data is collected.</p>
+        {% endif %}
+    </section>
+
+    <section class="heatmap-section" aria-labelledby="heatmap-title">
+        <div class="heatmap-heading">
+            <div>
+                <h3 id="heatmap-title">Usage heatmap</h3>
+                <p>Average usage by day and hour</p>
+            </div>
+            <div class="heatmap-legend" aria-label="Usage levels">
+                <span><i class="legend-dot low"></i>Low <small>0–30%</small></span>
+                <span><i class="legend-dot moderate"></i>Moderate <small>31–70%</small></span>
+                <span><i class="legend-dot high"></i>High <small>71–100%</small></span>
+            </div>
+        </div>
+
+        {% if heatmap %}
+        {% if heatmap_fallback_time %}
+        <p class="heatmap-note">19:00 and 20:00 use weekday averages from the last 14 days when available. Where a recent hour average is unavailable, the latest scrape is shown only for its weekday ({{ heatmap_fallback_time.strftime('%b %d at %I:%M %p') }}).</p>
+        {% endif %}
+        <div class="heatmap-scroll" role="region" aria-label="Average gym usage by weekday and hour" tabindex="0">
+            <table class="heatmap-table">
+                <thead>
+                    <tr>
+                        <th scope="col">Day</th>
+                        {% for h in range(6, 24) %}
+                        <th scope="col">{{ h }}:00</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% set days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] %}
+                    {% for day in range(7) %}
+                    <tr>
+                        <th scope="row">{{ days[day] }}</th>
+                        {% for h in range(6, 24) %}
+                        {% set val = heatmap.get((day, h)) %}
+                        <td class="{% if val is not none %}{% if val <= 30 %}heat-low{% elif val <= 70 %}heat-moderate{% else %}heat-high{% endif %}{% else %}heat-empty{% endif %}"
+                            {% if val is not none %}title="{{ days[day] }} at {{ h }}:00 — {{ '%.0f'|format(val) }}% usage"{% else %}title="No data for {{ days[day] }} at {{ h }}:00"{% endif %}>
+                            {% if val is not none %}{{ "%.0f"|format(val) }}%{% else %}<span aria-label="No data">—</span>{% endif %}
+                        </td>
+                        {% endfor %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="empty-state">No heatmap data available yet. It will appear as usage is collected.</p>
+        {% endif %}
+    </section>
+</main>
 {% endblock %}
