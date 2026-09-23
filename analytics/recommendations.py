@@ -206,14 +206,20 @@ def get_heatmap_data(db: Session, prefs: models.UserPreferences):
             latest_scrape_local = pytz.UTC.localize(latest_scrape_at).astimezone(tz)
 
     # Populate every weekday at 19:00 and 20:00. Use the same-hour recent
-    # average for weekdays without their own sample, then the latest scrape
-    # until any sample for that hour has arrived.
+    # average for weekdays without their own sample. If there are no recent
+    # observations for an hour, show the latest scrape only on its actual
+    # weekday so one reading is not presented as a full week's history.
+    today_local = datetime.now(tz)
     for weekday in range(7):
         for hour in (19, 20):
             values = recent_cells.get((weekday, hour)) or recent_hours.get(hour)
             if values:
                 heatmap[(weekday, hour)] = sum(values) / len(values)
-            elif latest_scrape_avg is not None:
+            elif (
+                latest_scrape_avg is not None
+                and latest_scrape_local.date() == today_local.date()
+                and weekday == latest_scrape_local.weekday()
+            ):
                 heatmap[(weekday, hour)] = latest_scrape_avg
 
     return heatmap, latest_scrape_local
